@@ -1,470 +1,282 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Anti-Peacekeeper</title>
-    <style>
-        :root {
-            --bg-main: #121214;
-            --bg-card: #1a1a1e;
-            --text-main: #f5f5f7;
-            --text-muted: #98989f;
-            --primary: #ff477e; /* 叛逆粉 */
-            --secondary: #00f2fe; /* 锋利蓝 */
-            --accent: #4ade80; /* 温和绿 */
-            --border: #2c2c35;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* 状态栏/页眉 */
-        header {
-            padding: 20px;
-            background: linear-gradient(to bottom, rgba(18,18,20,1), rgba(18,18,20,0.8));
-            border-bottom: 1px solid var(--border);
-            text-align: center;
-            z-index: 10;
-        }
-
-        header h1 {
-            font-size: 1.4rem;
-            font-weight: 800;
-            letter-spacing: 1px;
-            background: linear-gradient(45deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        header p {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-
-        /* 主体内容滚动区 */
-        main {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            padding-bottom: 100px; /* 为底部导航留空 */
-        }
-
-        .view {
-            display: none;
-        }
-
-        .view.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* 通用卡片样式 */
-        .card {
-            background-color: var(--bg-card);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 16px;
-            border: 1px solid var(--border);
-        }
-
-        h2 {
-            font-size: 1.1rem;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* 视图一：每日任务 */
-        .mission-status {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 4px solid var(--primary);
-            padding-left: 12px;
-        }
-
-        .btn-check {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-check.done {
-            background: #2c2c35;
-            color: var(--text-muted);
-        }
-
-        /* 视图二：场景话术 */
-        .scene-selector {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            margin-bottom: 16px;
-            padding-bottom: 4px;
-        }
-
-        .scene-chip {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            white-space: nowrap;
-            cursor: pointer;
-        }
-
-        .scene-chip.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        .script-box {
-            position: relative;
-            background: rgba(0,0,0,0.2);
-            border-radius: 12px;
-            padding: 12px;
-            margin-top: 10px;
-            font-size: 0.95rem;
-            line-height: 1.5;
-            border-left: 3px solid var(--secondary);
-        }
-
-        .btn-copy {
-            position: absolute;
-            right: 8px;
-            top: 8px;
-            background: none;
-            border: none;
-            color: var(--secondary);
-            font-size: 0.75rem;
-            cursor: pointer;
-        }
-
-        /* 视图三：界限练习 */
-        .practice-container {
-            text-align: center;
-            padding: 20px 10px;
-        }
-
-        .pressure-text {
-            font-size: 1.1rem;
-            margin-bottom: 24px;
-            min-height: 50px;
-            color: #ffb84d;
-        }
-
-        .btn-reject {
-            background: none;
-            border: 2px solid var(--primary);
-            color: var(--primary);
-            padding: 12px 30px;
-            border-radius: 25px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-            width: 80%;
-            max-width: 250px;
-        }
-
-        .btn-reject:active {
-            background: var(--primary);
-            color: white;
-        }
-
-        /* 底部导航栏 */
-        nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 65px;
-            background: #1a1a1e;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            z-index: 10;
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: var(--text-muted);
-            text-decoration: none;
-            font-size: 0.7rem;
-            gap: 4px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            flex: 1;
-        }
-
-        .nav-item.active {
-            color: var(--primary);
-        }
-
-        .nav-icon {
-            font-size: 1.3rem;
-        }
-
-        /* 提示气泡 */
-        .toast {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.85);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            display: none;
-            z-index: 100;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Anti-Peacekeeper</title>
+<style>
+:root{
+--bg:#121214;
+--card:#1a1a1e;
+--border:#2c2c35;
+--text:#f5f5f7;
+--muted:#98989f;
+--primary:#ff477e;
+--secondary:#00f2fe;
+}
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;
+}
+body{
+background:var(--bg);
+color:var(--text);
+padding:20px;
+}
+header{
+text-align:center;
+margin-bottom:30px;
+}
+h1{
+font-size:32px;
+background:linear-gradient(
+45deg,
+var(--primary),
+var(--secondary)
+);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+}
+.subtitle{
+color:var(--muted);
+margin-top:8px;
+}
+.card{
+background:var(--card);
+border:1px solid var(--border);
+border-radius:20px;
+padding:20px;
+margin-bottom:20px;
+}
+h2{
+margin-bottom:15px;
+}
+textarea{
+width:100%;
+min-height:180px;
+background:#111;
+border:1px solid var(--border);
+border-radius:15px;
+padding:15px;
+color:white;
+font-size:16px;
+resize:none;
+}
+button{
+border:none;
+cursor:pointer;
+}
+.generate-btn{
+width:100%;
+margin-top:15px;
+padding:15px;
+border-radius:15px;
+background:linear-gradient(
+45deg,
+var(--primary),
+var(--secondary)
+);
+color:white;
+font-size:16px;
+font-weight:bold;
+}
+.reply-card{
+display:none;
+margin-top:20px;
+}
+.reply-box{
+position:relative;
+background:#111;
+padding:15px;
+border-radius:15px;
+margin-bottom:15px;
+padding-right:70px;
+line-height:1.6;
+}
+.copy-btn{
+position:absolute;
+right:12px;
+top:12px;
+background:none;
+color:var(--secondary);
+font-weight:bold;
+}
+.tag{
+font-weight:bold;
+margin-bottom:10px;
+}
+.toast{
+position:fixed;
+left:50%;
+bottom:40px;
+transform:translateX(-50%);
+background:black;
+padding:12px 20px;
+border-radius:30px;
+display:none;
+}
+</style>
 </head>
 <body>
-
-    <header>
-        <h1>ANTI-PEACEKEEPER</h1>
-        <p>温柔地亮出你的獠牙</p>
-    </header>
-
-    <main>
-        <!-- 视图 1: 每日勇气 -->
-        <div id="view-mission" class="view active">
-            <div class="card">
-                <h2><span>⚡</span> 今日勇气任务</h2>
-                <div class="mission-status">
-                    <div>
-                        <p id="mission-title" style="font-weight: bold; font-size: 1rem; margin-bottom: 4px;">正在加载...</p>
-                        <p id="mission-desc" style="font-size: 0.85rem; color: var(--text-muted);">思考3秒再回答</p>
-                    </div>
-                    <button class="btn-check" id="btn-complete" onclick="toggleMission()">打卡</button>
-                </div>
-            </div>
-            <div class="card" style="opacity: 0.7;">
-                <h2><span>💡</span> 叛逆小贴士</h2>
-                <p style="font-size: 0.85rem; line-height: 1.6;">“不”是一个完整的句子。你不需要为了拒绝别人，而编造一个冗长的借口故事。</p>
-            </div>
-        </div>
-
-        <!-- 视图 2: 拒绝话术 -->
-        <div id="view-scripts" class="view">
-            <div class="scene-selector" id="scene-tabs">
-                <!-- 动态生成标签 -->
-            </div>
-            <div id="scripts-container">
-                <!-- 动态生成话术卡片 -->
-            </div>
-        </div>
-
-        <!-- 视图 3: 界限练习 -->
-        <div id="view-practice" class="view">
-            <div class="card" style="margin-top: 20px;">
-                <h2><span>🎯</span> 模拟抗压练习</h2>
-                <div class="practice-container">
-                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">当虚拟声音对你施压时，请坚定地按下拒绝</p>
-                    <div class="pressure-text" id="pressure-quote">“今晚全组加班，你那份报告今晚必须出来。”</div>
-                    <button class="btn-reject" onclick="triggerReject()">坚定拒绝</button>
-                </div>
-            </div>
-            <div id="practice-feedback" style="text-align: center; color: var(--accent); font-size: 0.9rem; font-weight: bold; min-height: 24px;"></div>
-        </div>
-    </main>
-
-    <!-- 底部导航 -->
-    <nav>
-        <button class="nav-item active" onclick="switchView('mission', this)">
-            <span class="nav-icon">⚡</span>
-            <span>每日勇气</span>
-        </button>
-        <button class="nav-item" onclick="switchView('scripts', this)">
-            <span class="nav-icon">💬</span>
-            <span>场景拒绝</span>
-        </button>
-        <button class="nav-item" onclick="switchView('practice', this)">
-            <span class="nav-icon">🛡️</span>
-            <span>界限练习</span>
-        </button>
-    </nav>
-
-    <!-- 提示组件 -->
-    <div class="toast" id="toast">已复制到剪贴板</div>
-
-    <script>
-        // 数据配置
-        const missions = [
-            { title: "延迟已读", desc: "收到非紧急工作消息，刻意等待15分钟再回复。" },
-            { title: "纯粹的拒绝", desc: "今天对一件不想做的小事说“不”，并且不附加任何理由。" },
-            { title: "终止话题", desc: "在聊天中感觉不适时，使用‘我了解了’并主动结束对话。" }
-        ];
-
-        const scriptData = {
-            "职场甩锅": [
-                { title: "温柔版", content: "“我这边的排期已经满了，为了保证质量，这个需求可能得找其他同事协助了。”" },
-                { title: "微叛逆", content: "“这好像超出了我的职责范围，建议直接走流程提报给主管定夺。”" }
-            ],
-            "道德绑架": [
-                { title: "温柔版", content: "“谢谢你这么信任我，但我能力有限，这次真的帮不上忙。”" },
-                { title: "微叛逆", content: "“你这么说让我压力很大。帮是情分，不帮是本分，希望你能理解。”" }
-            ],
-            "无效社交": [
-                { title: "温柔版", content: "“今晚有些个人事务要处理，你们玩得开心！”" },
-                { title: "微叛逆", content: "“最近精力有限，只想回家躺平，下次有机会再聚。”" }
-            ]
-        };
-
-        const pressureQuotes = [
-            "“大家都是朋友，这点小忙你都不帮？”",
-            "“顺路帮我带个外卖呗，反正你也要去。”",
-            "“这个周末公司有个临时活动，你来顶一下？”",
-            "“我这都是为了你好，你别不知好歹。”"
-        ];
-
-        // 初始化
-        document.addEventListener("DOMContentLoaded", () => {
-            initMission();
-            initScripts();
-            initPractice();
-        });
-
-        // 导航切换
-        function switchView(viewId, element) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            
-            document.getElementById(`view-${viewId}`).classList.add('active');
-            element.classList.add('active');
-        }
-
-        // 1. 每日任务逻辑
-        function initMission() {
-            const todayMission = missions[new Date().getDay() % missions.length];
-            document.getElementById('mission-title').innerText = todayMission.title;
-            document.getElementById('mission-desc').innerText = todayMission.desc;
-        }
-
-        function toggleMission() {
-            const btn = document.getElementById('btn-complete');
-            if (btn.classList.contains('done')) {
-                btn.classList.remove('done');
-                btn.innerText = "打卡";
-            } else {
-                btn.classList.add('done');
-                btn.innerText = "已完成 ✓";
-                showToast("Nice! 边界感+1");
-            }
-        }
-
-        // 2. 拒绝话术逻辑
-        function initScripts() {
-            const tabsContainer = document.getElementById('scene-tabs');
-            const cardsContainer = document.getElementById('scripts-container');
-            
-            let isFirst = true;
-            for (let scene in scriptData) {
-                // 生成Tab
-                const chip = document.createElement('div');
-                chip.className = `scene-chip ${isFirst ? 'active' : ''}`;
-                chip.innerText = scene;
-                chip.onclick = (e) => {
-                    document.querySelectorAll('.scene-chip').forEach(c => c.classList.remove('active'));
-                    chip.classList.add('active');
-                    renderScriptCards(scene);
-                };
-                tabsContainer.appendChild(chip);
-                if (isFirst) { renderScriptCards(scene); isFirst = false; }
-            }
-        }
-
-        function renderScriptCards(scene) {
-            const container = document.getElementById('scripts-container');
-            container.innerHTML = '';
-            
-            scriptData[scene].forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.innerHTML = `
-                    <h3>${item.title}</h3>
-                    <div class="script-box">
-                        <span>${item.content}</span>
-                        <button class="btn-copy" onclick="copyText(this)">复制</button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        // 3. 练习逻辑
-        function initPractice() {
-            nextPressure();
-        }
-
-        function nextPressure() {
-            const q = pressureQuotes[Math.floor(Math.random() * pressureQuotes.length)];
-            document.getElementById('pressure-quote').innerText = q;
-        }
-
-        function triggerReject() {
-            const feedback = document.getElementById('practice-feedback');
-            const indicators = ["做得好！心软解决不了问题", "漂亮！坚定的拒绝让人更尊重你", "你做到了，拒绝并没有引发世界末日"];
-            feedback.innerText = indicators[Math.floor(Math.random() * indicators.length)];
-            
-            setTimeout(() => {
-                feedback.innerText = "";
-                nextPressure();
-            }, 2000);
-        }
-
-        // 工具：提示与复制
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.innerText = msg;
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 1500);
-        }
-
-        function copyText(btn) {
-            const text = btn.previousElementSibling.innerText;
-            navigator.clipboard.writeText(text.replace(/[“”]/g, '')).then(() => {
-                showToast("复制成功，去勇敢拒绝吧！");
-            });
-        }
-    </script>
+<header>
+<h1>ANTI-PEACEKEEPER</h1>
+<div class="subtitle">
+温柔地亮出你的獠牙
+</div>
+</header>
+<div class="card">
+<h2>🧠 AI 边界回复生成器</h2>
+<p style="color:gray;margin-bottom:15px;">
+今天谁又来消耗你了？
+</p>
+<textarea
+id="situation"
+placeholder="例如：
+老板突然叫我周末加班...
+朋友一直借钱不还...
+妈妈逼我参加聚会..."
+></textarea>
+<button
+class="generate-btn"
+onclick="generateReply()"
+>
+✨ 生成回复
+</button>
+</div>
+<div
+class="card reply-card"
+id="result"
+>
+<div class="tag">🩷 温柔版</div>
+<div class="reply-box">
+<span id="soft"></span>
+<button
+class="copy-btn"
+onclick="copyText('soft')"
+>
+复制
+</button>
+</div>
+<div class="tag">🔥 坚定版</div>
+<div class="reply-box">
+<span id="firm"></span>
+<button
+class="copy-btn"
+onclick="copyText('firm')"
+>
+复制
+</button>
+</div>
+<div class="tag">😈 微叛逆版</div>
+<div class="reply-box">
+<span id="rebel"></span>
+<button
+class="copy-btn"
+onclick="copyText('rebel')"
+>
+复制
+</button>
+</div>
+</div>
+<div class="toast" id="toast">
+已复制
+</div>
+<script>
+function generateReply(){
+const text =
+document.getElementById(
+'situation'
+).value.toLowerCase();
+if(!text){
+showToast('先输入情况～');
+return;
+}
+let soft =
+'谢谢你想到我，但这次我无法答应。';
+let firm =
+'这件事我无法配合。';
+let rebel =
+'我没有义务满足所有人的期待。';
+if(
+text.includes('加班') ||
+text.includes('老板') ||
+text.includes('工作')
+){
+soft =
+'我已经有安排了，这次无法加班。';
+firm =
+'下班后的时间属于我自己。';
+rebel =
+'临时安排，不代表我必须配合。';
+}
+else if(
+text.includes('借钱')
+){
+soft =
+'我目前不方便借钱。';
+firm =
+'关于借钱，我决定不参与。';
+rebel =
+'我的钱需要先照顾我自己。';
+}
+else if(
+text.includes('聚会') ||
+text.includes('饭局')
+){
+soft =
+'谢谢邀请，但这次我想休息。';
+firm =
+'这次我不会参加。';
+rebel =
+'我有权利拒绝无效社交。';
+}
+else if(
+text.includes('帮忙') ||
+text.includes('为了你好')
+){
+soft =
+'谢谢你的信任，但我帮不上忙。';
+firm =
+'帮忙是选择，不是义务。';
+rebel =
+'别人的期待不是我的责任。';
+}
+document.getElementById(
+'soft'
+).innerText = soft;
+document.getElementById(
+'firm'
+).innerText = firm;
+document.getElementById(
+'rebel'
+).innerText = rebel;
+document.getElementById(
+'result'
+).style.display='block';
+window.scrollTo({
+top:document.body.scrollHeight,
+behavior:'smooth'
+});
+}
+function copyText(id){
+const text =
+document.getElementById(id)
+.innerText;
+navigator.clipboard
+.writeText(text);
+showToast('复制成功！');
+}
+function showToast(msg){
+const toast =
+document.getElementById('toast');
+toast.innerText = msg;
+toast.style.display='block';
+setTimeout(()=>{
+toast.style.display='none';
+},1500);
+}
+</script>
 </body>
 </html>
